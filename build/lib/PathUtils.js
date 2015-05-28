@@ -1,3 +1,5 @@
+'use strict';
+
 var invariant = require('react/lib/invariant');
 var assign = require('object-assign');
 var qs = require('qs');
@@ -38,21 +40,21 @@ var PathUtils = {
   /**
    * Returns true if the given path is absolute.
    */
-  isAbsolute: function (path) {
+  isAbsolute: function isAbsolute(path) {
     return path.charAt(0) === '/';
   },
 
   /**
    * Joins two URL paths together.
    */
-  join: function (a, b) {
+  join: function join(a, b) {
     return a.replace(/\/*$/, '/') + b;
   },
 
   /**
    * Returns an array of the names of all parameters in the given pattern.
    */
-  extractParamNames: function (pattern) {
+  extractParamNames: function extractParamNames(pattern) {
     return compilePattern(pattern).paramNames;
   },
 
@@ -61,14 +63,17 @@ var PathUtils = {
    * and returns an object of param name => value pairs. Returns null if the
    * pattern does not match the given path.
    */
-  extractParams: function (pattern, path) {
-    var { matcher, paramNames } = compilePattern(pattern);
+  extractParams: function extractParams(pattern, path) {
+    var _compilePattern = compilePattern(pattern);
+
+    var matcher = _compilePattern.matcher;
+    var paramNames = _compilePattern.paramNames;
+
     var match = path.match(matcher);
 
-    if (!match)
+    if (!match) {
       return null;
-
-    var params = {};
+    }var params = {};
 
     paramNames.forEach(function (paramName, index) {
       params[paramName] = match[index + 1];
@@ -81,7 +86,7 @@ var PathUtils = {
    * Returns a version of the given route path with params interpolated. Throws
    * if there is a dynamic segment of the route path for which there is no param.
    */
-  injectParams: function (pattern, params) {
+  injectParams: function injectParams(pattern, params) {
     params = params || {};
 
     var splatIndex = 0;
@@ -93,25 +98,16 @@ var PathUtils = {
       if (paramName.slice(-1) === '?') {
         paramName = paramName.slice(0, -1);
 
-        if (params[paramName] == null)
-          return '';
+        if (params[paramName] == null) return '';
       } else {
-        invariant(
-          params[paramName] != null,
-          'Missing "%s" parameter for path "%s"',
-          paramName, pattern
-        );
+        invariant(params[paramName] != null, 'Missing "%s" parameter for path "%s"', paramName, pattern);
       }
 
       var segment;
       if (paramName === 'splat' && Array.isArray(params[paramName])) {
         segment = params[paramName][splatIndex++];
 
-        invariant(
-          segment != null,
-          'Missing splat # %s for path "%s"',
-          splatIndex, pattern
-        );
+        invariant(segment != null, 'Missing splat # %s for path "%s"', splatIndex, pattern);
       } else {
         segment = params[paramName];
       }
@@ -124,7 +120,7 @@ var PathUtils = {
    * Returns an object that is the result of parsing any query string contained
    * in the given path, null if the path contains no query string.
    */
-  extractQuery: function (path) {
+  extractQuery: function extractQuery(path) {
     var match = path.match(queryMatcher);
     return match && qs.parse(match[1]);
   },
@@ -132,7 +128,7 @@ var PathUtils = {
   /**
    * Returns a version of the given path without the query string.
    */
-  withoutQuery: function (path) {
+  withoutQuery: function withoutQuery(path) {
     return path.replace(queryMatcher, '');
   },
 
@@ -140,18 +136,16 @@ var PathUtils = {
    * Returns a version of the given path with the parameters in the given
    * query merged into the query string.
    */
-  withQuery: function (path, query) {
+  withQuery: function withQuery(path, query) {
     var existingQuery = PathUtils.extractQuery(path);
 
-    if (existingQuery)
-      query = query ? assign(existingQuery, query) : existingQuery;
+    if (existingQuery) query = query ? assign(existingQuery, query) : existingQuery;
 
     var queryString = qs.stringify(query, { arrayFormat: 'brackets' });
 
-    if (queryString)
+    if (queryString) {
       return PathUtils.withoutQuery(path) + '?' + queryString;
-
-    return PathUtils.withoutQuery(path);
+    }return PathUtils.withoutQuery(path);
   }
 
 };

@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+changelog=node_modules/.bin/changelog
+
 update_version() {
   echo "$(node -p "p=require('./${1}');p.version='${2}';JSON.stringify(p,null,2)")" > $1
   echo "Updated ${1} version to ${2}"
@@ -22,13 +24,10 @@ npm test -- --single-run
 update_version 'package.json' $next_version
 update_version 'bower.json' $next_version
 
-node_modules/.bin/changelog -t $next_ref
+$changelog -t $next_ref
 
-npm run build-global
-git add -A build/global
-
-npm run build-npm
-git add -A build/npm
+npm run build
+git add -A build
 
 git commit -am "Version $next_version"
 
@@ -39,4 +38,18 @@ git push origin master
 git push origin $next_ref
 git push origin latest -f
 
-npm publish build/npm
+npm publish build
+
+echo "# Publishing docs website"
+npm run build-website
+cd website
+rm -rf .git
+git init .
+git remote add origin git@github.com:rackt/react-router.git
+git checkout -b gh-pages
+git add .
+git commit -m 'publishing docs'
+git push origin gh-pages -f
+rm -rf .git
+cd ..
+
